@@ -1,0 +1,8 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [ { "hooks": [ { "type": "command", "command": "python .claude/hooks/log.py UserPromptSubmit" } ] } ],
+    "PostToolUse": [ { "matcher": "", "hooks": [ { "type": "command", "command": "python .claude/hooks/log.py PostToolUse" } ] } ],
+    "SubagentStop": [ { "hooks": [ { "type": "command", "command": "python .claude/hooks/log.py SubagentStop" } ] } ],
+    "Stop": [ { "hooks": [ { "type": "command", "command": "python .claude/hooks/log.py Stop" } ] } ]
+  }
+}

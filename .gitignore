@@ -1,0 +1,6 @@
+log.db
+secrets/
+data/*
+!data/.gitkeep
+.DS_Store
+Thumbs.db

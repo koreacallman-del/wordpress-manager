@@ -38,7 +38,7 @@ def main():
             parts = re.split(r"^---\s*$", text, maxsplit=1, flags=re.M)
             text = parts[1] if len(parts) > 1 else text
         m = re.search(r"^#\s*(.+)", text, re.M); title = m.group(1).strip() if m else os.path.basename(a.file)
-        text = re.sub(r"^#\s*.+\n", "", text, count=1)
+        text = re.sub(r"^#\s*.+\n", "", text, count=1, flags=re.M)
         content = markdown.markdown(text, extensions=["tables", "fenced_code"])
     r = requests.post(api + "/posts", auth=auth, json={"title": title, "content": content, "status": "draft", "excerpt": excerpt}, timeout=30)
     if r.ok:

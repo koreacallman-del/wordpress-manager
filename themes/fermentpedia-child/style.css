@@ -68,16 +68,18 @@ header.site-header.is-sticky {
 /* ===== Hero Section ===== */
 .fp-hero {
   position: relative;
-  max-width: 1290px;
-  margin: 20px auto;
-  height: 360px;
+  width: calc(100% - 48px) !important;
+  max-width: 1140px !important;
+  margin: 20px auto !important;
+  height: 300px;
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: var(--fp-radius);
+  border-radius: 12px;
+  box-shadow: var(--fp-shadow);
 }
 
 .fp-hero::before {

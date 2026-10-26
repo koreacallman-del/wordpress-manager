@@ -58,56 +58,30 @@ add_action('wp_footer', function () {
 });
 
 
-/* ---------- 3. 프론트페이지 빈 공간 제거 + 진단 ---------- */
+/* ---------- 3. 프론트페이지 빈 공간 제거 ---------- */
 
-// 3a. Kadence 필터
 add_filter('kadence_show_hero_title', function ($show) {
     if (is_front_page()) return false;
     return $show;
 });
 
-// 3b. 진단 JS — main#inner-wrap 내부 요소 구조 표시
-add_action('wp_footer', function () {
+add_action('wp_head', function () {
     if (!is_front_page()) return;
     ?>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var main = document.getElementById('inner-wrap');
-        if (!main) return;
-        var box = document.createElement('div');
-        box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font:11px monospace;padding:8px;z-index:99999;max-height:50vh;overflow:auto;';
-        var info = 'main#inner-wrap children:\n';
-        var kids = main.children;
-        for (var i = 0; i < kids.length && i < 15; i++) {
-            var el = kids[i];
-            var rect = el.getBoundingClientRect();
-            var tag = el.tagName.toLowerCase();
-            var cls = (el.className || '').toString().substring(0, 100);
-            var id = el.id || '';
-            var text = (el.textContent || '').trim().substring(0, 40);
-            info += i + ': <' + tag + ' class="' + cls + '"' + (id ? ' id="' + id + '"' : '') + '> h=' + Math.round(rect.height) + 'px';
-            info += ' text="' + text + '"\n';
-            el.style.outline = '3px solid blue';
-            el.style.outlineOffset = '-3px';
-            var label = document.createElement('div');
-            label.style.cssText = 'background:blue;color:#fff;font:bold 10px monospace;padding:2px 4px;position:relative;z-index:9999;';
-            label.textContent = i + ': ' + tag + '.' + cls.split(' ')[0] + (id ? '#' + id : '') + ' [' + Math.round(rect.height) + 'px]';
-            el.insertBefore(label, el.firstChild);
+    <style>
+        .home #inner-wrap {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
         }
-        box.textContent = info;
-        document.body.appendChild(box);
-    });
-    </script>
+    </style>
     <?php
 });
 
-
 /* ---------- 4. 메인페이지 랜덤 피처드 포스트 ---------- */
 
-add_action('kadence_after_header', function () {
-    if (!is_front_page()) {
-        return;
-    }
+// 4a. hidden div로 카드 HTML을 wp_footer에 출력
+add_action('wp_footer', function () {
+    if (!is_front_page()) return;
 
     $all = get_posts([
         'numberposts'  => 30,
@@ -117,34 +91,58 @@ add_action('kadence_after_header', function () {
         'order'        => 'DESC',
     ]);
 
-    if (count($all) < 2) {
-        return;
-    }
+    if (count($all) < 2) return;
 
     shuffle($all);
     $picks = array_slice($all, 0, 2);
     ?>
-    <div class="fp-featured-wrap">
-        <div class="fp-featured-grid">
-            <?php foreach ($picks as $p) :
-                $img = get_the_post_thumbnail_url($p->ID, 'large');
-                $cat = get_the_category($p->ID);
-                $cat_name = !empty($cat) ? esc_html($cat[0]->name) : '';
-            ?>
-            <a href="<?php echo get_permalink($p->ID); ?>" class="fp-featured-card">
-                <div class="fp-featured-img" style="background-image:url('<?php echo esc_url($img); ?>')"></div>
-                <div class="fp-featured-info">
-                    <?php if ($cat_name) : ?>
-                        <span class="fp-featured-cat"><?php echo $cat_name; ?></span>
-                    <?php endif; ?>
-                    <h3 class="fp-featured-title"><?php echo esc_html($p->post_title); ?></h3>
-                </div>
-            </a>
-            <?php endforeach; ?>
+    <div id="fp-featured-pending" style="display:none">
+        <div class="fp-featured-wrap">
+            <div class="fp-featured-grid">
+                <?php foreach ($picks as $p) :
+                    $img = get_the_post_thumbnail_url($p->ID, 'large');
+                    $cat = get_the_category($p->ID);
+                    $cat_name = !empty($cat) ? esc_html($cat[0]->name) : '';
+                ?>
+                <a href="<?php echo get_permalink($p->ID); ?>" class="fp-featured-card">
+                    <div class="fp-featured-img" style="background-image:url('<?php echo esc_url($img); ?>')"></div>
+                    <div class="fp-featured-info">
+                        <?php if ($cat_name) : ?>
+                            <span class="fp-featured-cat"><?php echo $cat_name; ?></span>
+                        <?php endif; ?>
+                        <h3 class="fp-featured-title"><?php echo esc_html($p->post_title); ?></h3>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
+    <script>
+    (function() {
+        var pending = document.getElementById('fp-featured-pending');
+        var target = document.getElementById('inner-wrap');
+        if (!pending || !target) return;
+        var wrap = pending.querySelector('.fp-featured-wrap');
+        if (!wrap) return;
+        target.insertBefore(wrap, target.firstChild);
+        pending.remove();
+
+        var kids = target.children;
+        for (var i = 1; i < kids.length; i++) {
+            var el = kids[i];
+            if (el.classList.contains('fp-featured-wrap')) continue;
+            var rect = el.getBoundingClientRect();
+            var text = (el.textContent || '').trim();
+            if (rect.height > 20 && rect.height < 300 && text.length === 0 && !el.querySelector('img, video, iframe, canvas')) {
+                el.style.display = 'none';
+            } else {
+                break;
+            }
+        }
+    })();
+    </script>
     <?php
-}, 5);
+});
 
 
 /* ---------- 5. 글 레이아웃: 이미지·제목 겹침 제거 ---------- */

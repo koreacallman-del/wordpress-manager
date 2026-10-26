@@ -58,18 +58,7 @@ add_action('wp_footer', function () {
 });
 
 
-/* ---------- 3. 프론트페이지 캐시 방지 + 빈 공간 제거 ---------- */
-
-// 프론트페이지는 랜덤 카드가 있으므로 캐시하지 않음
-add_action('send_headers', function () {
-    if (!is_front_page()) return;
-    header('Cache-Control: no-cache, no-store, must-revalidate');
-    header('Pragma: no-cache');
-    header('Expires: 0');
-    if (function_exists('litespeed_purge_all')) {
-        header('X-LiteSpeed-Cache-Control: no-cache');
-    }
-});
+/* ---------- 3. 프론트페이지 빈 공간 제거 ---------- */
 
 add_filter('kadence_show_hero_title', function ($show) {
     if (is_front_page()) return false;
@@ -88,11 +77,15 @@ add_action('wp_head', function () {
     <?php
 });
 
-/* ---------- 4. 메인페이지 랜덤 피처드 포스트 ---------- */
+/* ---------- 4. 메인페이지 랜덤 피처드 포스트 (AJAX) ---------- */
 
-// 4a. hidden div로 카드 HTML을 wp_footer에 출력
-add_action('wp_footer', function () {
-    if (!is_front_page()) return;
+// 4a. AJAX 엔드포인트 — 랜덤 카드 HTML 반환
+add_action('wp_ajax_fp_random_cards', 'fp_random_cards_ajax');
+add_action('wp_ajax_nopriv_fp_random_cards', 'fp_random_cards_ajax');
+
+function fp_random_cards_ajax() {
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
 
     $all = get_posts([
         'numberposts'  => 30,
@@ -102,30 +95,37 @@ add_action('wp_footer', function () {
         'order'        => 'DESC',
     ]);
 
-    if (count($all) < 2) return;
+    if (count($all) < 2) { wp_die(); }
 
     shuffle($all);
     $picks = array_slice($all, 0, 2);
+
+    foreach ($picks as $p) :
+        $img = get_the_post_thumbnail_url($p->ID, 'large');
+        $cat = get_the_category($p->ID);
+        $cat_name = !empty($cat) ? esc_html($cat[0]->name) : '';
+    ?>
+    <a href="<?php echo get_permalink($p->ID); ?>" class="fp-featured-card">
+        <div class="fp-featured-img" style="background-image:url('<?php echo esc_url($img); ?>')"></div>
+        <div class="fp-featured-info">
+            <?php if ($cat_name) : ?>
+                <span class="fp-featured-cat"><?php echo $cat_name; ?></span>
+            <?php endif; ?>
+            <h3 class="fp-featured-title"><?php echo esc_html($p->post_title); ?></h3>
+        </div>
+    </a>
+    <?php endforeach;
+    wp_die();
+}
+
+// 4b. 프론트페이지에 빈 카드 컨테이너 + AJAX 로드 스크립트
+add_action('wp_footer', function () {
+    if (!is_front_page()) return;
+    $ajax_url = admin_url('admin-ajax.php');
     ?>
     <div id="fp-featured-pending" style="display:none">
         <div class="fp-featured-wrap">
-            <div class="fp-featured-grid">
-                <?php foreach ($picks as $p) :
-                    $img = get_the_post_thumbnail_url($p->ID, 'large');
-                    $cat = get_the_category($p->ID);
-                    $cat_name = !empty($cat) ? esc_html($cat[0]->name) : '';
-                ?>
-                <a href="<?php echo get_permalink($p->ID); ?>" class="fp-featured-card">
-                    <div class="fp-featured-img" style="background-image:url('<?php echo esc_url($img); ?>')"></div>
-                    <div class="fp-featured-info">
-                        <?php if ($cat_name) : ?>
-                            <span class="fp-featured-cat"><?php echo $cat_name; ?></span>
-                        <?php endif; ?>
-                        <h3 class="fp-featured-title"><?php echo esc_html($p->post_title); ?></h3>
-                    </div>
-                </a>
-                <?php endforeach; ?>
-            </div>
+            <div class="fp-featured-grid" id="fp-featured-grid"></div>
         </div>
     </div>
     <script>
@@ -143,15 +143,25 @@ add_action('wp_footer', function () {
         }
         pending.remove();
 
+        var grid = document.getElementById('fp-featured-grid');
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '<?php echo esc_js($ajax_url); ?>?action=fp_random_cards&_=' + Date.now(), true);
+        xhr.onload = function() {
+            if (xhr.status === 200 && xhr.responseText.trim()) {
+                grid.innerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+
         var kids = target.children;
-        for (var i = 1; i < kids.length; i++) {
+        for (var i = 0; i < kids.length; i++) {
             var el = kids[i];
             if (el.classList.contains('fp-featured-wrap')) continue;
             var rect = el.getBoundingClientRect();
             var text = (el.textContent || '').trim();
             if (rect.height > 20 && rect.height < 300 && text.length === 0 && !el.querySelector('img, video, iframe, canvas')) {
                 el.style.display = 'none';
-            } else {
+            } else if (text.length > 0) {
                 break;
             }
         }

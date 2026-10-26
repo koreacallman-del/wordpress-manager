@@ -4,7 +4,8 @@
  *
  * 1. 부모 테마 + 차일드 CSS 로드
  * 2. 고정 헤더 (sticky header) JS
- * 3. 메인페이지 랜덤 히어로 이미지
+ * 3. 메인페이지 랜덤 피처드 포스트 2개
+ * 4. 글 레이아웃: 이미지·제목 겹침 제거
  */
 
 defined('ABSPATH') || exit;
@@ -56,84 +57,47 @@ add_action('wp_footer', function () {
 });
 
 
-/* ---------- 3. 메인페이지 랜덤 히어로 ---------- */
+/* ---------- 3. 메인페이지 랜덤 피처드 포스트 ---------- */
 
 add_action('kadence_after_header', function () {
     if (!is_front_page()) {
         return;
     }
 
-    $images = fp_get_hero_images();
-    if (empty($images)) {
+    $posts = get_posts([
+        'numberposts'  => 40,
+        'post_status'  => 'publish',
+        'meta_key'     => '_thumbnail_id',
+        'orderby'      => 'rand',
+    ]);
+
+    if (count($posts) < 2) {
         return;
     }
 
-    $pick = $images[array_rand($images)];
-    $height = get_theme_mod('fp_hero_height', 300);
+    $picks = array_slice($posts, 0, 2);
     ?>
-    <div class="fp-hero-wrap">
-        <section class="fp-hero" style="background-image:url('<?php echo esc_url($pick); ?>'); --fp-hero-height:<?php echo intval($height); ?>px">
-            <div class="fp-hero-content">
-                <h1 class="fp-hero-title"><?php bloginfo('name'); ?></h1>
-                <p class="fp-hero-subtitle"><?php bloginfo('description'); ?></p>
-            </div>
-        </section>
+    <div class="fp-featured-wrap">
+        <div class="fp-featured-grid">
+            <?php foreach ($picks as $p) :
+                $img = get_the_post_thumbnail_url($p->ID, 'large');
+                $cat = get_the_category($p->ID);
+                $cat_name = !empty($cat) ? esc_html($cat[0]->name) : '';
+            ?>
+            <a href="<?php echo get_permalink($p->ID); ?>" class="fp-featured-card">
+                <div class="fp-featured-img" style="background-image:url('<?php echo esc_url($img); ?>')"></div>
+                <div class="fp-featured-info">
+                    <?php if ($cat_name) : ?>
+                        <span class="fp-featured-cat"><?php echo $cat_name; ?></span>
+                    <?php endif; ?>
+                    <h3 class="fp-featured-title"><?php echo esc_html($p->post_title); ?></h3>
+                </div>
+            </a>
+            <?php endforeach; ?>
+        </div>
     </div>
     <?php
 });
-
-
-/**
- * 히어로 이미지 후보 목록 가져오기
- *
- * 우선순위:
- *  1) 커스터마이저에서 설정한 fp_hero_images (쉼표 구분 URL)
- *  2) 최근 발행 글 중 특성 이미지가 있는 것 최대 15개
- *
- * 결과는 1시간 캐시.
- */
-function fp_get_hero_images() {
-    $cached = get_transient('fp_hero_images');
-    if (is_array($cached) && !empty($cached)) {
-        return $cached;
-    }
-
-    // 커스터마이저 설정 (선택 사항)
-    $custom = get_theme_mod('fp_hero_images', '');
-    if (!empty($custom)) {
-        $urls = array_filter(array_map('trim', explode(',', $custom)));
-        if (!empty($urls)) {
-            set_transient('fp_hero_images', $urls, HOUR_IN_SECONDS);
-            return $urls;
-        }
-    }
-
-    // 특성 이미지에서 자동 수집
-    $posts = get_posts([
-        'numberposts'  => 30,
-        'post_status'  => 'publish',
-        'meta_key'     => '_thumbnail_id',
-        'orderby'      => 'date',
-        'order'        => 'DESC',
-    ]);
-
-    $images = [];
-    foreach ($posts as $p) {
-        $url = get_the_post_thumbnail_url($p->ID, 'full');
-        if ($url) {
-            $images[] = $url;
-        }
-        if (count($images) >= 15) {
-            break;
-        }
-    }
-
-    if (!empty($images)) {
-        set_transient('fp_hero_images', $images, HOUR_IN_SECONDS);
-    }
-
-    return $images;
-}
 
 
 /* ---------- 4. 글 레이아웃: 이미지·제목 겹침 제거 ---------- */
@@ -159,41 +123,4 @@ add_filter('theme_mod_post_title_element_feature', function ($val) {
         $val['enabled'] = true;
     }
     return $val;
-});
-
-
-/* ---------- 5. 커스터마이저 설정 (히어로 이미지 URL) ---------- */
-
-add_action('customize_register', function ($wp_customize) {
-    $wp_customize->add_section('fp_hero_section', [
-        'title'    => 'Fermentpedia Hero',
-        'priority' => 35,
-    ]);
-
-    $wp_customize->add_setting('fp_hero_images', [
-        'default'           => '',
-        'sanitize_callback' => 'sanitize_textarea_field',
-        'transport'         => 'refresh',
-    ]);
-
-    $wp_customize->add_control('fp_hero_images', [
-        'label'       => 'Hero Image URLs',
-        'description' => '쉼표로 구분된 이미지 URL. 비워두면 최근 글 특성 이미지를 자동으로 사용합니다.',
-        'section'     => 'fp_hero_section',
-        'type'        => 'textarea',
-    ]);
-
-    $wp_customize->add_setting('fp_hero_height', [
-        'default'           => 300,
-        'sanitize_callback' => 'absint',
-        'transport'         => 'refresh',
-    ]);
-
-    $wp_customize->add_control('fp_hero_height', [
-        'label'       => 'Hero Height (px)',
-        'description' => '히어로 이미지 높이. 기본값 300.',
-        'section'     => 'fp_hero_section',
-        'type'        => 'number',
-        'input_attrs' => ['min' => 150, 'max' => 600, 'step' => 10],
-    ]);
 });

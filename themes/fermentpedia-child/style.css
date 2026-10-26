@@ -1,8 +1,8 @@
 /*
  Theme Name:   Fermentpedia
- Description:  Kadence 차일드 테마 — 고정 헤더, 랜덤 히어로, 커스텀 디자인
+ Description:  Kadence 차일드 테마 — 고정 헤더, 랜덤 피처드, 커스텀 디자인
  Template:     kadence
- Version:      1.0.0
+ Version:      1.1.0
  Text Domain:  fermentpedia-child
 */
 
@@ -65,60 +65,74 @@ header.site-header.is-sticky {
   color: var(--fp-primary) !important;
 }
 
-/* ===== Hero Section ===== */
-.fp-hero-wrap {
+/* ===== Random Featured Posts (2 cards) ===== */
+.fp-featured-wrap {
   max-width: var(--global-content-width, 1200px);
   margin: 0 auto;
-  padding: 20px 24px;
+  padding: 24px 24px 0;
 }
 
-.fp-hero {
+.fp-featured-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.fp-featured-card {
+  display: block;
   position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--fp-shadow);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-featured-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.fp-featured-img {
   width: 100%;
-  height: var(--fp-hero-height, 300px);
+  height: 280px;
   background-size: cover;
   background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 12px;
-  box-shadow: var(--fp-shadow);
+  transition: transform 0.3s ease;
 }
 
-.fp-hero::before {
-  content: '';
+.fp-featured-card:hover .fp-featured-img {
+  transform: scale(1.03);
+}
+
+.fp-featured-info {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(0,0,0,0.15) 0%,
-    rgba(0,0,0,0.55) 100%
-  );
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px 20px 20px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%);
 }
 
-.fp-hero-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  padding: 0 24px;
-  max-width: 700px;
+.fp-featured-cat {
+  display: inline-block;
+  background: var(--fp-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
 }
 
-.fp-hero-title {
+.fp-featured-title {
   color: #FFFFFF;
-  font-size: clamp(2rem, 5vw, 3.2rem);
-  font-weight: 700;
-  margin: 0 0 12px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  line-height: 1.2;
-}
-
-.fp-hero-subtitle {
-  color: rgba(255,255,255,0.9);
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  font-size: 1.1rem;
+  font-weight: 600;
   margin: 0;
-  font-weight: 400;
+  line-height: 1.3;
   text-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
@@ -216,7 +230,7 @@ button.search-submit:hover {
   color: #FFFFFF !important;
 }
 
-/* ===== Single Post Hero — 이미지·제목 겹침 제거 ===== */
+/* ===== Single Post — 이미지·제목 겹침 제거 ===== */
 .single .entry-hero-container-inner,
 .single .hero-section-overlay {
   margin-top: 0 !important;
@@ -243,12 +257,16 @@ button.search-submit:hover {
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .fp-hero {
-    height: 300px;
-  }
-
   :root {
     --fp-header-height: 60px;
+  }
+
+  .fp-featured-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fp-featured-img {
+    height: 200px;
   }
 
   .single .entry-header {
@@ -261,7 +279,11 @@ button.search-submit:hover {
 }
 
 @media (max-width: 480px) {
-  .fp-hero {
-    height: 240px;
+  .fp-featured-img {
+    height: 180px;
+  }
+
+  .fp-featured-title {
+    font-size: 0.95rem;
   }
 }

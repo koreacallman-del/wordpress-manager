@@ -133,7 +133,33 @@ function fp_get_hero_images() {
 }
 
 
-/* ---------- 4. 커스터마이저 설정 (히어로 이미지 URL) ---------- */
+/* ---------- 4. 글 레이아웃: 이미지·제목 겹침 제거 ---------- */
+
+add_filter('theme_mod_post_title_layout', function () {
+    return 'normal';
+});
+
+add_filter('theme_mod_post_title_inner_layout', function () {
+    return 'standard';
+});
+
+add_filter('theme_mod_post_title_featured_placement', function () {
+    return 'above';
+});
+
+add_filter('theme_mod_post_feature_position', function () {
+    return 'above';
+});
+
+add_filter('theme_mod_post_title_element_feature', function ($val) {
+    if (is_array($val)) {
+        $val['enabled'] = true;
+    }
+    return $val;
+});
+
+
+/* ---------- 5. 커스터마이저 설정 (히어로 이미지 URL) ---------- */
 
 add_action('customize_register', function ($wp_customize) {
     $wp_customize->add_section('fp_hero_section', [

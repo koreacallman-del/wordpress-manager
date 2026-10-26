@@ -124,7 +124,12 @@ add_action('wp_footer', function () {
         if (!pending || !target) return;
         var wrap = pending.querySelector('.fp-featured-wrap');
         if (!wrap) return;
-        target.insertBefore(wrap, target.firstChild);
+        var firstChild = target.firstElementChild;
+        if (firstChild) {
+            firstChild.insertAdjacentElement('afterend', wrap);
+        } else {
+            target.insertBefore(wrap, target.firstChild);
+        }
         pending.remove();
 
         var kids = target.children;

@@ -58,7 +58,18 @@ add_action('wp_footer', function () {
 });
 
 
-/* ---------- 3. 프론트페이지 빈 공간 제거 ---------- */
+/* ---------- 3. 프론트페이지 캐시 방지 + 빈 공간 제거 ---------- */
+
+// 프론트페이지는 랜덤 카드가 있으므로 캐시하지 않음
+add_action('send_headers', function () {
+    if (!is_front_page()) return;
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    if (function_exists('litespeed_purge_all')) {
+        header('X-LiteSpeed-Cache-Control: no-cache');
+    }
+});
 
 add_filter('kadence_show_hero_title', function ($show) {
     if (is_front_page()) return false;

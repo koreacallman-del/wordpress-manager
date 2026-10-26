@@ -66,12 +66,16 @@ header.site-header.is-sticky {
 }
 
 /* ===== Hero Section ===== */
+.fp-hero-wrap {
+  max-width: var(--global-content-width, 1200px);
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
 .fp-hero {
   position: relative;
-  width: calc(100% - 48px) !important;
-  max-width: 1140px !important;
-  margin: 20px auto !important;
-  height: 300px;
+  width: 100%;
+  height: var(--fp-hero-height, 300px);
   background-size: cover;
   background-position: center;
   display: flex;

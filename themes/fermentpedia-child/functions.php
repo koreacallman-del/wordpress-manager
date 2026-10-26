@@ -69,13 +69,16 @@ add_action('kadence_after_header', function () {
     }
 
     $pick = $images[array_rand($images)];
+    $height = get_theme_mod('fp_hero_height', 300);
     ?>
-    <section class="fp-hero" style="background-image:url('<?php echo esc_url($pick); ?>')">
-        <div class="fp-hero-content">
-            <h1 class="fp-hero-title"><?php bloginfo('name'); ?></h1>
-            <p class="fp-hero-subtitle"><?php bloginfo('description'); ?></p>
-        </div>
-    </section>
+    <div class="fp-hero-wrap">
+        <section class="fp-hero" style="background-image:url('<?php echo esc_url($pick); ?>'); --fp-hero-height:<?php echo intval($height); ?>px">
+            <div class="fp-hero-content">
+                <h1 class="fp-hero-title"><?php bloginfo('name'); ?></h1>
+                <p class="fp-hero-subtitle"><?php bloginfo('description'); ?></p>
+            </div>
+        </section>
+    </div>
     <?php
 });
 
@@ -178,5 +181,19 @@ add_action('customize_register', function ($wp_customize) {
         'description' => '쉼표로 구분된 이미지 URL. 비워두면 최근 글 특성 이미지를 자동으로 사용합니다.',
         'section'     => 'fp_hero_section',
         'type'        => 'textarea',
+    ]);
+
+    $wp_customize->add_setting('fp_hero_height', [
+        'default'           => 300,
+        'sanitize_callback' => 'absint',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('fp_hero_height', [
+        'label'       => 'Hero Height (px)',
+        'description' => '히어로 이미지 높이. 기본값 300.',
+        'section'     => 'fp_hero_section',
+        'type'        => 'number',
+        'input_attrs' => ['min' => 150, 'max' => 600, 'step' => 10],
     ]);
 });

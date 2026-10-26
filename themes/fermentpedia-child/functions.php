@@ -4,8 +4,9 @@
  *
  * 1. 부모 테마 + 차일드 CSS 로드
  * 2. 고정 헤더 (sticky header) JS
- * 3. 메인페이지 랜덤 피처드 포스트 2개
- * 4. 글 레이아웃: 이미지·제목 겹침 제거
+ * 3. 프론트페이지 Kadence 히어로 제거
+ * 4. 메인페이지 랜덤 피처드 포스트 2개
+ * 5. 글 레이아웃: 이미지·제목 겹침 제거
  */
 
 defined('ABSPATH') || exit;
@@ -57,25 +58,53 @@ add_action('wp_footer', function () {
 });
 
 
-/* ---------- 3. 메인페이지 랜덤 피처드 포스트 ---------- */
+/* ---------- 3. 프론트페이지 Kadence 히어로/페이지 타이틀 제거 ---------- */
+
+add_action('wp_head', function () {
+    if (!is_front_page()) {
+        return;
+    }
+    ?>
+    <style>
+        .home .entry-hero-container,
+        .home .page-hero-section,
+        .home .entry-hero-layout-standard,
+        .home .entry-hero-layout-overlap,
+        .home .wp-site-blocks > .entry-hero-container,
+        .home .hero-section-overlay {
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+        }
+    </style>
+    <?php
+});
+
+
+/* ---------- 4. 메인페이지 랜덤 피처드 포스트 ---------- */
 
 add_action('kadence_after_header', function () {
     if (!is_front_page()) {
         return;
     }
 
-    $posts = get_posts([
-        'numberposts'  => 40,
+    $all = get_posts([
+        'numberposts'  => 30,
         'post_status'  => 'publish',
         'meta_key'     => '_thumbnail_id',
-        'orderby'      => 'rand',
+        'orderby'      => 'date',
+        'order'        => 'DESC',
     ]);
 
-    if (count($posts) < 2) {
+    if (count($all) < 2) {
         return;
     }
 
-    $picks = array_slice($posts, 0, 2);
+    shuffle($all);
+    $picks = array_slice($all, 0, 2);
     ?>
     <div class="fp-featured-wrap">
         <div class="fp-featured-grid">
@@ -97,10 +126,10 @@ add_action('kadence_after_header', function () {
         </div>
     </div>
     <?php
-});
+}, 5);
 
 
-/* ---------- 4. 글 레이아웃: 이미지·제목 겹침 제거 ---------- */
+/* ---------- 5. 글 레이아웃: 이미지·제목 겹침 제거 ---------- */
 
 add_filter('theme_mod_post_title_layout', function () {
     return 'normal';

@@ -208,6 +208,31 @@ button.search-submit:hover {
   color: #FFFFFF !important;
 }
 
+/* ===== Single Post Hero — 이미지·제목 겹침 제거 ===== */
+.single .entry-hero-container-inner,
+.single .hero-section-overlay {
+  margin-top: 0 !important;
+  position: relative !important;
+}
+
+.single .entry-hero-layout-overlap .entry-hero-container-inner {
+  margin-top: 0 !important;
+}
+
+.single .post-thumbnail-inner img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.single .entry-header {
+  position: relative !important;
+  margin-top: 0 !important;
+  transform: none !important;
+  background: var(--fp-bg-card);
+  padding: 24px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .fp-hero {
@@ -216,6 +241,14 @@ button.search-submit:hover {
 
   :root {
     --fp-header-height: 60px;
+  }
+
+  .single .entry-header {
+    padding: 16px;
+  }
+
+  .single .entry-hero-container-inner {
+    margin-top: 0 !important;
   }
 }
 

@@ -58,8 +58,17 @@ add_action('wp_footer', function () {
 });
 
 
-/* ---------- 3. 프론트페이지 Kadence 히어로/페이지 타이틀 제거 ---------- */
+/* ---------- 3. 프론트페이지 Kadence 페이지 타이틀/히어로 완전 제거 ---------- */
 
+// 3a. Kadence 필터로 히어로 타이틀 렌더링 자체를 막음
+add_filter('kadence_show_hero_title', function ($show) {
+    if (is_front_page()) {
+        return false;
+    }
+    return $show;
+});
+
+// 3b. 혹시 남는 빈 컨테이너까지 CSS로 제거
 add_action('wp_head', function () {
     if (!is_front_page()) {
         return;
@@ -71,13 +80,37 @@ add_action('wp_head', function () {
         .home .entry-hero-layout-standard,
         .home .entry-hero-layout-overlap,
         .home .wp-site-blocks > .entry-hero-container,
-        .home .hero-section-overlay {
+        .home .hero-section-overlay,
+        .home .kadence-page-hero,
+        .home .entry-header,
+        .home .page-title,
+        .home .hentry > .entry-hero-container,
+        .home .site-main > .entry-hero-container,
+        .home .content-wrap > .entry-hero-container {
             display: none !important;
             height: 0 !important;
             min-height: 0 !important;
+            max-height: 0 !important;
             padding: 0 !important;
             margin: 0 !important;
             overflow: hidden !important;
+            visibility: hidden !important;
+            line-height: 0 !important;
+            font-size: 0 !important;
+            border: none !important;
+        }
+        .home .site-main {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        .home .content-wrap {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        .home .site-container > .site-main,
+        .home .wp-site-blocks > .site-main {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
         }
     </style>
     <?php

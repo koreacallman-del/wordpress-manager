@@ -60,33 +60,34 @@ add_action('wp_footer', function () {
 
 /* ---------- 3. 프론트페이지 Kadence 페이지 타이틀/히어로 완전 제거 ---------- */
 
-// 3a. Kadence 필터로 히어로 타이틀 렌더링 자체를 막음
+// 3a. Kadence 필터로 히어로 타이틀 렌더링 차단
 add_filter('kadence_show_hero_title', function ($show) {
-    if (is_front_page()) {
-        return false;
-    }
+    if (is_front_page()) return false;
     return $show;
 });
 
-// 3b. 혹시 남는 빈 컨테이너까지 CSS로 제거
-add_action('wp_head', function () {
-    if (!is_front_page()) {
-        return;
+// 3b. Kadence 포스트 메타를 필터링해서 페이지 타이틀 영역 비활성화
+add_filter('get_post_metadata', function ($value, $post_id, $meta_key, $single) {
+    if (!is_front_page()) return $value;
+    if ($meta_key === '_kad_post_title') {
+        return $single ? 'hide' : ['hide'];
     }
+    if ($meta_key === '_kad_post_title_height') {
+        return $single ? '0' : ['0'];
+    }
+    return $value;
+}, 10, 4);
+
+// 3c. 와일드카드 CSS — 클래스명에 hero/page-title 포함된 모든 요소 제거
+add_action('wp_head', function () {
+    if (!is_front_page()) return;
     ?>
     <style>
-        .home .entry-hero-container,
-        .home .page-hero-section,
-        .home .entry-hero-layout-standard,
-        .home .entry-hero-layout-overlap,
-        .home .wp-site-blocks > .entry-hero-container,
-        .home .hero-section-overlay,
-        .home .kadence-page-hero,
-        .home .entry-header,
-        .home .page-title,
-        .home .hentry > .entry-hero-container,
-        .home .site-main > .entry-hero-container,
-        .home .content-wrap > .entry-hero-container {
+        .home [class*="hero"],
+        .home [class*="page-hero"],
+        .home [class*="entry-hero"],
+        .home [class*="page-title"]:not(.site-title),
+        .home .entry-header {
             display: none !important;
             height: 0 !important;
             min-height: 0 !important;
@@ -94,25 +95,54 @@ add_action('wp_head', function () {
             padding: 0 !important;
             margin: 0 !important;
             overflow: hidden !important;
-            visibility: hidden !important;
-            line-height: 0 !important;
-            font-size: 0 !important;
-            border: none !important;
         }
-        .home .site-main {
+        .home .site-main,
+        .home .content-wrap,
+        .home .site-content,
+        .home #inner-wrap,
+        .home .site-container {
             padding-top: 0 !important;
             margin-top: 0 !important;
-        }
-        .home .content-wrap {
-            padding-top: 0 !important;
-            margin-top: 0 !important;
-        }
-        .home .site-container > .site-main,
-        .home .wp-site-blocks > .site-main {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
         }
     </style>
+    <?php
+});
+
+// 3d. JavaScript 최종 방어 — DOM에서 빈 공간 요소를 직접 제거
+add_action('wp_footer', function () {
+    if (!is_front_page()) return;
+    ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var wrap = document.querySelector('.fp-featured-wrap');
+        if (!wrap) return;
+        var all = document.querySelectorAll('body > *, body > div > *');
+        for (var i = 0; i < all.length; i++) {
+            var el = all[i];
+            if (el.tagName === 'HEADER' || el.tagName === 'FOOTER' || el.tagName === 'MAIN') continue;
+            if (el.classList.contains('fp-featured-wrap')) continue;
+            if (el.querySelector && el.querySelector('main, footer, .fp-featured-wrap')) continue;
+            if (el.querySelector && el.querySelector('.site-main')) continue;
+            var cls = el.className || '';
+            if (typeof cls === 'string' && (cls.indexOf('hero') !== -1 || cls.indexOf('page-title') !== -1 || cls.indexOf('entry-header') !== -1)) {
+                el.style.cssText = 'display:none!important;height:0!important;';
+            }
+        }
+        var header = document.querySelector('header.site-header');
+        if (!header) return;
+        var next = wrap.nextElementSibling;
+        while (next) {
+            if (next.tagName === 'MAIN' || next.id === 'main' || next.classList.contains('site-main')) break;
+            if (next.querySelector && next.querySelector('main, .site-main, #main')) break;
+            var rect = next.getBoundingClientRect();
+            var text = (next.textContent || '').trim();
+            if (rect.height > 30 && text.length < 5 && !next.querySelector('img, video, canvas')) {
+                next.style.cssText = 'display:none!important;';
+            }
+            next = next.nextElementSibling;
+        }
+    });
+    </script>
     <?php
 });
 

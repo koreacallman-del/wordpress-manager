@@ -102,7 +102,7 @@ header.site-header.is-sticky {
 
 .fp-featured-img {
   width: 100%;
-  height: 280px;
+  aspect-ratio: 2 / 1;
   overflow: hidden;
 }
 
@@ -277,10 +277,6 @@ button.search-submit:hover {
     grid-template-columns: 1fr;
   }
 
-  .fp-featured-img {
-    height: 200px;
-  }
-
   .single .entry-header {
     padding: 16px;
   }
@@ -291,10 +287,6 @@ button.search-submit:hover {
 }
 
 @media (max-width: 480px) {
-  .fp-featured-img {
-    height: 180px;
-  }
-
   .fp-featured-title {
     font-size: 0.95rem;
   }

@@ -68,29 +68,16 @@ original_len = len(content)
 link_count = 0
 
 for title, url in found_urls.items():
-    # HTML 변환 후이므로 <em>...</em> 형태일 수 있음
-    # 패턴 1: <em>Title (full or partial match)</em>
-    # 패턴 2: 그냥 텍스트에 *Title*
-
-    # Related Reading 섹션의 리스트 항목: <em>Title</em> -- description
-    # 본문 중: see <em>Title</em> 또는 see <em>Title (subtitle)</em>
-
-    # title이 포함된 <em>...</em>을 찾아서 링크로 변환
-    # 단, 이미 <a> 안에 있으면 스킵
-
-    def replace_em(m):
-        nonlocal link_count
-        full = m.group(0)
-        inner = m.group(1)
-        link_count += 1
-        return f'<a href="{url}">{inner}</a>'
-
-    # <em> 태그 내부에 title이 포함된 경우
     pattern = re.compile(
         r'<em>([^<]*?' + re.escape(title) + r'[^<]*?)</em>',
         re.IGNORECASE
     )
-    content = pattern.sub(replace_em, content)
+    matches = pattern.findall(content)
+    link_count += len(matches)
+    content = pattern.sub(
+        lambda m: f'<a href="{url}">{m.group(1)}</a>',
+        content
+    )
 
 print(f"\n내부 링크 {link_count}개 삽입 완료")
 

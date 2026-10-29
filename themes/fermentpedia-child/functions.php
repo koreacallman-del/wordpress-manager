@@ -26,6 +26,43 @@ add_action('wp_enqueue_scripts', function () {
     );
 });
 
+/* ---------- 1b. 성능 최적화 ---------- */
+
+// DNS prefetch / preconnect for Google Fonts
+add_action('wp_head', function () {
+    echo '<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>' . "\n";
+    echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+}, 1);
+
+// font-display: swap 강제 (Google Fonts FOIT 방지 → CLS 개선)
+add_filter('style_loader_tag', function ($html, $handle) {
+    if (strpos($html, 'fonts.googleapis.com') !== false && strpos($html, 'display=swap') === false) {
+        $html = str_replace('googleapis.com/css2?', 'googleapis.com/css2?display=swap&', $html);
+        $html = str_replace('googleapis.com/css?', 'googleapis.com/css?display=swap&', $html);
+    }
+    return $html;
+}, 10, 2);
+
+// 이미지에 width/height 속성 누락 시 추가 (CLS 방지)
+add_filter('wp_get_attachment_image_attributes', function ($attr, $attachment) {
+    if (empty($attr['width']) || empty($attr['height'])) {
+        $meta = wp_get_attachment_metadata($attachment->ID);
+        if ($meta && !empty($meta['width']) && !empty($meta['height'])) {
+            $attr['width'] = $meta['width'];
+            $attr['height'] = $meta['height'];
+        }
+    }
+    return $attr;
+}, 10, 2);
+
+// 비필수 JS를 defer로 로드 (렌더 블로킹 제거)
+add_filter('script_loader_tag', function ($tag, $handle) {
+    $no_defer = ['jquery-core', 'jquery-migrate', 'wp-hooks'];
+    if (is_admin() || in_array($handle, $no_defer)) return $tag;
+    if (strpos($tag, 'defer') !== false || strpos($tag, 'async') !== false) return $tag;
+    return str_replace(' src=', ' defer src=', $tag);
+}, 10, 2);
+
 
 /* ---------- 2. 고정 헤더 JS ---------- */
 

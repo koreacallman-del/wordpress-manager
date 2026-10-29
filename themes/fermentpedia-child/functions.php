@@ -5,7 +5,7 @@
  * 1. 부모 테마 + 차일드 CSS 로드
  * 2. 고정 헤더 (sticky header) JS
  * 3. 프론트페이지 Kadence 히어로 제거
- * 4. 메인페이지 랜덤 피처드 포스트 2개
+ * 4. 메인페이지 피처드 포스트 (서버 렌더링)
  * 5. 글 레이아웃: 이미지·제목 겹침 제거
  */
 
@@ -114,15 +114,10 @@ add_action('wp_head', function () {
     <?php
 });
 
-/* ---------- 4. 메인페이지 랜덤 피처드 포스트 (AJAX) ---------- */
+/* ---------- 4. 메인페이지 피처드 포스트 (서버 렌더링) ---------- */
 
-// 4a. AJAX 엔드포인트 — 랜덤 카드 HTML 반환
-add_action('wp_ajax_fp_random_cards', 'fp_random_cards_ajax');
-add_action('wp_ajax_nopriv_fp_random_cards', 'fp_random_cards_ajax');
-
-function fp_random_cards_ajax() {
-    header('Cache-Control: no-cache, no-store, must-revalidate');
-    header('Pragma: no-cache');
+function fp_render_featured_section() {
+    if (!is_front_page()) return;
 
     $all = get_posts([
         'numberposts'  => 30,
@@ -132,64 +127,67 @@ function fp_random_cards_ajax() {
         'order'        => 'DESC',
     ]);
 
-    if (count($all) < 2) { wp_die(); }
+    if (count($all) < 2) return;
 
     shuffle($all);
     $picks = array_slice($all, 0, 2);
 
-    foreach ($picks as $p) :
-        $img = get_the_post_thumbnail_url($p->ID, 'large');
-        $cat = get_the_category($p->ID);
-        $cat_name = !empty($cat) ? esc_html($cat[0]->name) : '';
+    $cap_srcset = function ($sources) {
+        foreach ($sources as $w => $source) {
+            if ($w > 1024) unset($sources[$w]);
+        }
+        return $sources;
+    };
+    add_filter('wp_calculate_image_srcset', $cap_srcset);
     ?>
-    <a href="<?php echo get_permalink($p->ID); ?>" class="fp-featured-card">
-        <div class="fp-featured-img" style="background-image:url('<?php echo esc_url($img); ?>')"></div>
-        <div class="fp-featured-info">
-            <?php if ($cat_name) : ?>
-                <span class="fp-featured-cat"><?php echo $cat_name; ?></span>
-            <?php endif; ?>
-            <h3 class="fp-featured-title"><?php echo esc_html($p->post_title); ?></h3>
-        </div>
-    </a>
-    <?php endforeach;
-    wp_die();
-}
+    <section class="fp-featured-wrap" aria-label="Featured">
+        <h2 class="fp-featured-heading">Featured</h2>
+        <div class="fp-featured-grid">
+        <?php foreach ($picks as $i => $p) :
+            $thumb_id = get_post_thumbnail_id($p->ID);
+            $cat = get_the_category($p->ID);
+            $cat_name = !empty($cat) ? esc_html($cat[0]->name) : '';
 
-// 4b. 프론트페이지에 빈 카드 컨테이너 + AJAX 로드 스크립트
+            $img_attrs = [
+                'class'    => 'fp-featured-img-el',
+                'sizes'    => '(max-width: 768px) 100vw, 560px',
+                'decoding' => 'async',
+            ];
+
+            if ($i === 0) {
+                $img_attrs['loading']       = 'eager';
+                $img_attrs['fetchpriority'] = 'high';
+            } else {
+                $img_attrs['loading'] = 'lazy';
+            }
+        ?>
+            <a href="<?php echo esc_url(get_permalink($p->ID)); ?>" class="fp-featured-card">
+                <div class="fp-featured-img">
+                    <?php echo wp_get_attachment_image($thumb_id, 'large', false, $img_attrs); ?>
+                </div>
+                <div class="fp-featured-info">
+                    <?php if ($cat_name) : ?>
+                        <span class="fp-featured-cat"><?php echo $cat_name; ?></span>
+                    <?php endif; ?>
+                    <h3 class="fp-featured-title"><?php echo esc_html($p->post_title); ?></h3>
+                </div>
+            </a>
+        <?php endforeach; ?>
+        </div>
+    </section>
+    <?php
+    remove_filter('wp_calculate_image_srcset', $cap_srcset);
+}
+add_action('kadence_after_header', 'fp_render_featured_section');
+
+// 프론트페이지 빈 공간(히어로 잔여 div) 정리
 add_action('wp_footer', function () {
     if (!is_front_page()) return;
-    $ajax_url = admin_url('admin-ajax.php');
     ?>
-    <div id="fp-featured-pending" style="display:none">
-        <div class="fp-featured-wrap">
-            <div class="fp-featured-grid" id="fp-featured-grid"></div>
-        </div>
-    </div>
     <script>
     (function() {
-        var pending = document.getElementById('fp-featured-pending');
         var target = document.getElementById('inner-wrap');
-        if (!pending || !target) return;
-        var wrap = pending.querySelector('.fp-featured-wrap');
-        if (!wrap) return;
-        var firstChild = target.firstElementChild;
-        if (firstChild) {
-            firstChild.insertAdjacentElement('afterend', wrap);
-        } else {
-            target.insertBefore(wrap, target.firstChild);
-        }
-        pending.remove();
-
-        var grid = document.getElementById('fp-featured-grid');
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', '<?php echo esc_js($ajax_url); ?>?action=fp_random_cards&_=' + Date.now(), true);
-        xhr.onload = function() {
-            if (xhr.status === 200 && xhr.responseText.trim()) {
-                grid.innerHTML = xhr.responseText;
-            }
-        };
-        xhr.send();
-
+        if (!target) return;
         var kids = target.children;
         for (var i = 0; i < kids.length; i++) {
             var el = kids[i];

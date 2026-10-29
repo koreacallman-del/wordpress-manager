@@ -2,7 +2,7 @@
  Theme Name:   Fermentpedia
  Description:  Kadence 차일드 테마 — 고정 헤더, 랜덤 피처드, 커스텀 디자인
  Template:     kadence
- Version:      1.9.0
+ Version:      2.0.0
  Text Domain:  fermentpedia-child
 */
 
@@ -65,19 +65,24 @@ header.site-header.is-sticky {
   color: var(--fp-primary) !important;
 }
 
-/* ===== Random Featured Posts (2 cards) ===== */
+/* ===== Featured Posts (2 cards, SSR) ===== */
 .fp-featured-wrap {
   max-width: var(--global-content-width, 1200px);
   margin: 0 auto;
   padding: 24px 24px 0;
-  min-height: 304px; /* CLS 방지: 카드 높이 280 + padding 24 */
+}
+
+.fp-featured-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--fp-text);
+  margin: 0 0 16px;
 }
 
 .fp-featured-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  min-height: 280px; /* CLS 방지 */
 }
 
 .fp-featured-card {
@@ -98,12 +103,17 @@ header.site-header.is-sticky {
 .fp-featured-img {
   width: 100%;
   height: 280px;
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
+}
+
+.fp-featured-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   transition: transform 0.3s ease;
 }
 
-.fp-featured-card:hover .fp-featured-img {
+.fp-featured-card:hover .fp-featured-img img {
   transform: scale(1.03);
 }
 
@@ -263,13 +273,8 @@ button.search-submit:hover {
     --fp-header-height: 60px;
   }
 
-  .fp-featured-wrap {
-    min-height: 448px; /* 모바일: 카드 2개 세로 (200+200+gap+padding) */
-  }
-
   .fp-featured-grid {
     grid-template-columns: 1fr;
-    min-height: 420px;
   }
 
   .fp-featured-img {

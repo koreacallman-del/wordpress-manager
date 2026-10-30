@@ -110,6 +110,11 @@ add_action('wp_head', function () {
             padding-top: 0 !important;
             margin-top: 0 !important;
         }
+        .home .entry-hero.page-hero-section,
+        .home .entry-hero-container-inner:empty,
+        .home .hero-section-overlay:empty {
+            display: none !important;
+        }
     </style>
     <?php
 });
@@ -180,30 +185,6 @@ function fp_render_featured_section() {
 }
 add_action('kadence_after_header', 'fp_render_featured_section');
 
-// 프론트페이지 빈 공간(히어로 잔여 div) 정리
-add_action('wp_footer', function () {
-    if (!is_front_page()) return;
-    ?>
-    <script>
-    (function() {
-        var target = document.getElementById('inner-wrap');
-        if (!target) return;
-        var kids = target.children;
-        for (var i = 0; i < kids.length; i++) {
-            var el = kids[i];
-            if (el.classList.contains('fp-featured-wrap')) continue;
-            var rect = el.getBoundingClientRect();
-            var text = (el.textContent || '').trim();
-            if (rect.height > 20 && rect.height < 300 && text.length === 0 && !el.querySelector('img, video, iframe, canvas')) {
-                el.style.display = 'none';
-            } else if (text.length > 0) {
-                break;
-            }
-        }
-    })();
-    </script>
-    <?php
-});
 
 
 /* ---------- 5. 글 레이아웃: 이미지·제목 겹침 제거 ---------- */
